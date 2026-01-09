@@ -11,7 +11,7 @@ def is_on_court(bbox, frame_shape):
     box_center_y = (y1 + y2) / 2
 
     # Ignore people whose feet are in the audience
-    if y2 < (frame_h * 0.37): 
+    if y2 < (frame_h * 0.3): 
         return False
 
     # Ignore people who are small; they're likely in the audience
@@ -99,4 +99,4 @@ def main(video_path):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    main("warriors_bucks.mp4")
+    main("cavs_wolves.mp4")

@@ -1,5 +1,6 @@
 import torch
 import cv2
+from collections import Counter
 from PIL import Image
 from transformers import AutoProcessor, AutoModel
 from sklearn.cluster import KMeans
@@ -23,6 +24,7 @@ class SigLIPTeamClassifier:
         self.model.eval()
         
         self.kmeans = None  # No grouping yet
+        self.cluster_mapping = None
 
     def _get_crop(self, frame, bbox):
         x1, y1, x2, y2 = map(int, bbox)
@@ -76,13 +78,29 @@ class SigLIPTeamClassifier:
             return
 
         self.kmeans = KMeans(n_clusters=3, n_init=10, random_state=42)
-        self.kmeans.fit(embeddings)
+        cluster_labels = self.kmeans.fit_predict(embeddings)
+        
+        # Identify which cluster is which based on cluster size
+        cluster_counts = Counter(cluster_labels)
+        
+        # Find the smallest cluster (for refs)
+        ref_cluster = min(cluster_counts, key=cluster_counts.get)
+        
+        team_clusters = [c for c in cluster_counts.keys() if c != ref_cluster]
+        
+        # Map original cluster id to their team/ref
+        self.cluster_mapping = {}
+        self.cluster_mapping[ref_cluster] = 2  # Referee
+        self.cluster_mapping[team_clusters[0]] = 0  # Team A
+        self.cluster_mapping[team_clusters[1]] = 1  # Team B
+        
         print("Teams and referees initialized.")
 
     def predict(self, frame, bbox):
-        if self.kmeans is None:
+        if self.kmeans is None or self.cluster_mapping is None:
             return -1
         emb = self.get_embedding(frame, bbox)
         if emb is None:
             return -1
-        return self.kmeans.predict([emb])[0]
+        raw_cluster_id = self.kmeans.predict([emb])[0]
+        return self.cluster_mapping[raw_cluster_id]

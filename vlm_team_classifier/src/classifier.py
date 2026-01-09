@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 
 class SigLIPTeamClassifier:
     def __init__(self, model_name="google/siglip-so400m-patch14-384"):
-        # Select GPU (or CPU if needed)
+        # Select GPU (or CPU as last resort)
         if torch.backends.mps.is_available():
             self.device = torch.device("mps")
         elif torch.cuda.is_available():

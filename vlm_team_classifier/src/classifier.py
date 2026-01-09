@@ -26,8 +26,21 @@ class SigLIPTeamClassifier:
 
     def _get_crop(self, frame, bbox):
         x1, y1, x2, y2 = map(int, bbox)
+        
+        height = y2 - y1
+        
+        # Keep the 15% to 70% of the player height
+        y2 = int(y1 + (height * 0.7))
+        y1 = int(y1 + (height * 0.15))
+        
+        # Crop the sides
+        width = x2 - x1
+        x1 = int(x1 + (width * 0.1))
+        x2 = int(x2 - (width * 0.1))
+
         h, w, _ = frame.shape
         x1, y1, x2, y2 = max(0, x1), max(0, y1), min(w, x2), min(h, y2)
+        
         if x2 <= x1 or y2 <= y1:
             return None
         return frame[y1:y2, x1:x2]

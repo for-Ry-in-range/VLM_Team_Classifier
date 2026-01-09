@@ -26,25 +26,22 @@ wheels/
 .installed.cfg
 *.egg
 
-# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
 .DS_Store
 Thumbs.db
 
-# Jupyter
 .ipynb_checkpoints/
 
 # Environment variables
 .env
 .env.local
 
-# Model files (if large)
+# Model files
 *.pt
 *.pth
 *.ckpt
@@ -52,8 +49,12 @@ Thumbs.db
 *.pkl
 *.safetensors
 
-# Data files (if large)
+# Data files
 *.csv
 *.json
 data/
 datasets/
+
+# Video files for testing
+*.mp4
+vlm_team_classifier/nba_gameplay.mp4

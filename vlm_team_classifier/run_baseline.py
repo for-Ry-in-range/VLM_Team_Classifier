@@ -1,6 +1,6 @@
 import cv2
 from ultralytics import YOLO
-from src.classifier import SigLIPTeamClassifier
+from baseline import TeamClustering
 
 
 def is_on_court(bbox, frame_shape):
@@ -11,7 +11,7 @@ def is_on_court(bbox, frame_shape):
     box_center_y = (y1 + y2) / 2
 
     # Ignore people whose feet are in the audience
-    if y2 < (frame_h * 0.3): 
+    if y2 < (frame_h * 0.37): 
         return False
 
     # Ignore people who are small; they're likely in the audience
@@ -23,7 +23,7 @@ def is_on_court(bbox, frame_shape):
 def main(video_path):
     # Initializations
     detector = YOLO('yolov8n.pt') 
-    classifier = SigLIPTeamClassifier()
+    classifier = TeamClustering(n_teams=2)  # Baseline only does 2 teams
     vid_cap = cv2.VideoCapture(video_path)
     
     # Fit on the first frame that have at least 9 people
@@ -34,7 +34,7 @@ def main(video_path):
             break
         
         # YOLO inference
-        detected = detector(frame, verbose=False)[0]  # verbose=False makes YOLO work silently
+        detected = detector(frame, verbose=False)[0]
         
         # Get valid person figures
         valid_bboxes = []
@@ -48,8 +48,8 @@ def main(video_path):
             classifier.fit(frame, valid_bboxes)
             break
 
-    # Team A: blue, Team B: red, Refs: yellow
-    colors = [(255, 0, 0), (0, 0, 255), (0, 255, 255)]
+    # Team A: blue, Team B: red
+    colors = [(255, 0, 0), (0, 0, 255)]
 
     while vid_cap.isOpened():
         res, frame = vid_cap.read()
@@ -59,7 +59,6 @@ def main(video_path):
         results = detector(frame, verbose=False)[0]
         
         for box in results.boxes:
-
             # Skip non people
             if int(box.cls) != 0: 
                 continue
@@ -69,29 +68,24 @@ def main(video_path):
             if not is_on_court(bbox_arr, frame.shape):
                 continue
             
-            # Predict 0, 1, or 2
-            cluster_id = classifier.predict(frame, bbox_arr)
+            # Predict 0 or 1
+            team_id = classifier.predict_team(frame, bbox_arr)
             
-            if cluster_id == 2:
-                label = "Referee"
-            elif cluster_id == 1:
-                label = "Team B"
-            elif cluster_id == 0:
+            if team_id == 0:
                 label = "Team A"
+            elif team_id == 1:
+                label = "Team B"
             else:
                 label = "Unknown"
 
             # Draw the boxes
             x1, y1, x2, y2 = map(int, bbox_arr)  # convert bbox values to ints
-            if cluster_id >= 0:
-                color = colors[cluster_id]
-            else:
-                color = (128, 128, 128)
+            color = colors[team_id]
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             cv2.putText(frame, label, (x1, y1-10), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
         
-        cv2.imshow('SigLIP: Teams and Referees', frame)
+        cv2.imshow('Baseline: Teams', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
             

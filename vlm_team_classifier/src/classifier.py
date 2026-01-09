@@ -4,6 +4,7 @@ from collections import Counter
 from PIL import Image
 from transformers import AutoProcessor, AutoModel
 from sklearn.cluster import KMeans
+import numpy as np
 
 
 class SigLIPTeamClassifier:
@@ -16,7 +17,7 @@ class SigLIPTeamClassifier:
         else:
             self.device = torch.device("cpu")
         
-        self.processor = AutoProcessor.from_pretrained(model_name)
+        self.processor = AutoProcessor.from_pretrained(model_name, use_fast=True)
 
         # Download the weights of the model
         self.model = AutoModel.from_pretrained(model_name).to(self.device)
@@ -31,14 +32,14 @@ class SigLIPTeamClassifier:
         
         height = y2 - y1
         
-        # Keep the 15% to 70% of the player height
-        y2 = int(y1 + (height * 0.7))
+        # Keep the 15% to 60% of the player height
+        y2 = int(y1 + (height * 0.6))
         y1 = int(y1 + (height * 0.15))
         
         # Crop the sides
         width = x2 - x1
-        x1 = int(x1 + (width * 0.1))
-        x2 = int(x2 - (width * 0.1))
+        x1 = int(x1 + (width * 0.2))
+        x2 = int(x2 - (width * 0.2))
 
         h, w, _ = frame.shape
         x1, y1, x2, y2 = max(0, x1), max(0, y1), min(w, x2), min(h, y2)
@@ -49,21 +50,34 @@ class SigLIPTeamClassifier:
 
     def get_embedding(self, frame, bbox):
         crop = self._get_crop(frame, bbox)
-        if crop is None:
+        if crop is None: 
             return None
-            
-        # Convert OpenCV BGR to RGB
+
         image = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
 
         # Process the image into tensors so it can be used by SigLIP model
         inputs = self.processor(images=image, return_tensors="pt").to(self.device)
         
-        with torch.no_grad():  # No gradient
-            output_embedding = self.model.get_image_features(**inputs)
+        with torch.no_grad():  # no gradient
+            outputs = self.model.get_image_features(**inputs)
             
-        # Normalize the vector to improve clustering
-        embedding = output_embedding / output_embedding.norm(p=2, dim=-1, keepdim=True)
-        return embedding.cpu().numpy().flatten()
+        # Normalize
+        siglip_emb = outputs / outputs.norm(p=2, dim=-1, keepdim=True)
+        siglip_emb = siglip_emb.cpu().numpy().flatten()
+        
+        # Get the RGB vector
+        avg_color = crop.mean(axis=(0, 1))  # returns BGR
+        
+        # Normalize to 0-1 range so it works with SigLIP
+        color_emb = avg_color / 255.0 
+        
+        # Reorder to RGB
+        color_emb = color_emb[::-1] 
+        
+        # Combine texture and color
+        combined_emb = np.concatenate([siglip_emb, color_emb * 1.2])
+        
+        return combined_emb
 
     def fit(self, frame, person_bboxes):
         """Finds Team A, Team B, and refs"""

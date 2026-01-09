@@ -11,7 +11,7 @@ class TeamClustering:
 
     def extract_jersey_color(self, frame, bbox):
         """Extract mean RGB color from middle 40% of bbox."""
-        x1, y1, x2, y2 = bbox
+        x1, y1, x2, y2 = map(int, bbox)
         height = y2 - y1
         margin = int(height * 0.3)
         jersey_region = frame[y1+margin:y2-margin, x1:x2]

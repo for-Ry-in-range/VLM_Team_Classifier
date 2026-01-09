@@ -3,6 +3,23 @@ from ultralytics import YOLO
 from src.classifier import SigLIPTeamClassifier
 
 
+def is_on_court(bbox, frame_shape):
+    """Returns True if the person is a player or ref"""
+    x1, y1, x2, y2 = bbox
+    frame_h, frame_w, _ = frame_shape
+    box_h = y2 - y1
+    box_center_y = (y1 + y2) / 2
+
+    # Ignore people whose feet are in the audience
+    if y2 < (frame_h * 0.37): 
+        return False
+
+    # Ignore people who are small; they're likely in the audience
+    if box_h < (frame_h * 0.18):
+        return False
+        
+    return True
+
 def main(video_path):
     # Initializations
     detector = YOLO('yolov8n.pt') 
@@ -19,12 +36,16 @@ def main(video_path):
         # YOLO inference
         detected = detector(frame, verbose=False)[0]  # verbose=False makes YOLO work silently
         
-        # Get indices of people (id of 0) detected
-        person_indices = [i for i, c in enumerate(detected.boxes.cls) if int(c) == 0]
-        
-        if len(person_indices) >= 9:
-            initial_bboxes = detected.boxes.xyxy[person_indices].cpu().numpy()
-            classifier.fit(frame, initial_bboxes)
+        # Get valid person figures
+        valid_bboxes = []
+        for box in detected.boxes:
+            if int(box.cls) == 0:  # It's a person
+                bbox_arr = box.xyxy[0].cpu().numpy()
+                if is_on_court(bbox_arr, frame.shape):
+                    valid_bboxes.append(bbox_arr)
+
+        if len(valid_bboxes) >= 9:
+            classifier.fit(frame, valid_bboxes)
             break
 
     # Team A: blue, Team B: red, Refs: yellow
@@ -43,10 +64,13 @@ def main(video_path):
             if int(box.cls) != 0: 
                 continue
             
-            bbox = box.xyxy[0].cpu().numpy()
+            bbox_arr = box.xyxy[0].cpu().numpy()
+
+            if not is_on_court(bbox_arr, frame.shape):
+                continue
             
             # Predict 0, 1, or 2
-            cluster_id = classifier.predict(frame, bbox)
+            cluster_id = classifier.predict(frame, bbox_arr)
             
             if cluster_id == 2:
                 label = "Referee"
@@ -58,7 +82,7 @@ def main(video_path):
                 label = "Unknown"
 
             # Draw the boxes
-            x1, y1, x2, y2 = map(int, bbox)  # convert bbox values to ints
+            x1, y1, x2, y2 = map(int, bbox_arr)  # convert bbox values to ints
             if cluster_id >= 0:
                 color = colors[cluster_id]
             else:
@@ -75,4 +99,4 @@ def main(video_path):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    main("nba_gameplay.mp4")
+    main("warriors_bucks.mp4")

@@ -1,6 +1,6 @@
 import cv2
 from ultralytics import YOLO
-from baseline import TeamClustering
+from src.baseline import TeamClustering
 
 
 def is_on_court(bbox, frame_shape):

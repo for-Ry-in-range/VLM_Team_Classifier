@@ -56,8 +56,9 @@ class SigLIPTeamClassifier:
         image = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
 
         # Process the image into tensors so it can be used by SigLIP model
-        inputs = self.processor(images=image, return_tensors="pt").to(self.device)
-        
+        inputs = self.processor(images=image, return_tensors="pt")
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
         with torch.no_grad():  # no gradient
             outputs = self.model.get_image_features(**inputs)
             

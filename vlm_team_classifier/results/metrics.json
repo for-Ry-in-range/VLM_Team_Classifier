@@ -1,0 +1,24 @@
+{
+    "Overall Performance": {
+        "SigLIP Classifier": 0.97,
+        "Baseline": 0.38
+    },
+    "Per-Class Precision": {
+        "Team A": 1.00,
+        "Team B": 1.00,
+        "Referees": 1.00
+    },
+    "Per-Class Recall": {
+        "Team A": 0.78,
+        "Team B": 0.65,
+        "Referees": 0.66
+    },
+    "Latency per frame (ms)": {
+        "SigLIP Classifier": 7,
+        "Baseline": 2
+    },
+    "Average Memory Usage (MB)": {
+        "SigLIP Classifier": 402.33,
+        "Baseline": 565.47
+    }
+}

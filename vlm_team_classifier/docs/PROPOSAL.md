@@ -55,6 +55,6 @@ Stability: A player’s team identification should not switch for more than 2 fr
 
 Accuracy: Manual verification that the predictions are more than 90% correct.
 
-Latency: Less than 100 ms per player on the H100 GPU.
+Latency: Less than 100 ms per frame on the H100.
 
 Test Coverage: At least 70% coverage using pytest.

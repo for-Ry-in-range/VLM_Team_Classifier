@@ -38,8 +38,8 @@
 **\*Speed measurements are based on the use of the H100 (my computer only has the Intel Core i5-8210Y, which is estimated to run models 750 times slower than the H100)**
 | Metric | SigLIP Classifier | Baseline |
 |--------|-------------------|----------|
-| Time per frame | 7 ms | 67 ms |
-| Average player prediction latency | 0.8 ms | 7 ms |
+| Time per frame | 7 ms | 2 ms |
+| Average player prediction latency | 0.8 ms | 0.2 ms |
 
 
 ### Memory Usage
@@ -60,7 +60,7 @@
 |---------|-------------------|------------------|
 | **Accuracy** | 97% | 38% |
 | **Referee detection** | Yes | No |
-| **Speed (time per frame)** | 7 ms | 67 ms |
+| **Speed (time per frame)** | 7 ms | 2 ms |
 | **Memory usage** | 402.33 MB | 565.47 MB |
 | **Weakness with lighting** | Low | High |
 | **Weakness with similar colors** | Low | High |
